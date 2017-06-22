@@ -58,10 +58,12 @@ library(DT)
               fluidRow(
                 box(width = 12, 
                   h5("Plots of original data, the points used in the model are in blue, model fit is a red line. Change time slider to re-calculate."),
-                  downloadLink('downloadModelPlot', 'Download Plot (pdf)'), selectizeInput(
-                                                                            "selectedSamples", 
-                                                                            "Select which samples to analyse", 
-                                                                            choices = NULL, multiple = TRUE)),
+                    column(6, selectizeInput("selectedSamples", 
+                                             "Select which samples to analyse", choices = NULL, multiple = TRUE)),
+                    column(3, selectizeInput("facetRows", "Number of plot rows", choices = c(1:10), selected =10)),
+                    column(3, selectizeInput("facetCols", "Number of plot columns", choices = c(1:12), selected =1)),
+                    downloadLink('downloadModelPlot', 'Download Plot (pdf)')),
+                
                 box(width = 12, title = "Model plot", status = "primary", 
                     plotOutput("model"))
               )
@@ -155,7 +157,7 @@ server <- function(input, output, session) {
         geom_point(aes(t,n), alpha = 0.3) +
         geom_line(aes(t,pred), color = "red", linetype = 4, data = unnest(df2(), preds)) +  
         geom_point(aes(t, n), color="deepskyblue3", alpha = 0.8, data = unnest(df2(), preds)) +
-        facet_wrap(~ sample, ncol = 8) +
+        facet_wrap(~ sample, ncol = input$facetCols, nrow = input$facetRows) +
         xlab("Time") +
         ylab("OD") +
         theme_minimal()
@@ -237,7 +239,7 @@ server <- function(input, output, session) {
      output$downloadModelPlot <- downloadHandler(
        filename = "modelPlot.pdf",
        content = function(file) {
-          ggsave(file, plot = modelplot(), device = "pdf")
+          ggsave(file, plot = modelplot(), device = "pdf", width = 11, height = 8, units = "in")
              })    
      
      
