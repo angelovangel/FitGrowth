@@ -58,7 +58,10 @@ library(DT)
               fluidRow(
                 box(width = 12, 
                   h5("Plots of original data, the points used in the model are in blue, model fit is a red line. Change time slider to re-calculate."),
-                  downloadLink('downloadModelPlot', 'Download Plot (pdf)')),
+                  downloadLink('downloadModelPlot', 'Download Plot (pdf)'), selectizeInput(
+                                                                            "selectedSamples", 
+                                                                            "Select which samples to analyse", 
+                                                                            choices = NULL, multiple = TRUE)),
                 box(width = 12, title = "Model plot", status = "primary", 
                     plotOutput("model"))
               )
@@ -90,7 +93,7 @@ library(DT)
         ) #end of dashboard body
 ui <- dashboardPage(header, sidebar, body)
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   observe({
     inFile <- input$file1
     if(is.null(inFile))
@@ -111,20 +114,30 @@ server <- function(input, output) {
                  coord_flip() +
                  theme_minimal()}
 #***
+#
     
+#***
+#read file
     
     df <- read_delim(inFile$datapath, col_names = input$header, delim = input$sep, 
                      locale = locale(decimal_mark = input$decmark), trim_ws = TRUE, escape_double = FALSE, na = "NA")
+    
+# selectize initialisation
+    sampleslist <- colnames(df) 
+    updateSelectizeInput(session, "selectedSamples", 
+                         choices = sampleslist[2:length(sampleslist)], 
+                         selected = sampleslist[2], # start with 1 sample selected
+                         server = TRUE) # used to filter samples to analyze
 # ** reactive things
     
-    df1 <- reactive({         #this is df1(), attempt to model all samples, used to give number of failed  in errorSample 
-      df %>%       
+    df1 <- function(){         #this is df1(), attempt to model all samples, used to give number of failed  in errorSample 
+      df %>% select(time, one_of(input$selectedSamples)) %>% # here actual filtering on selectedSamples , notice one_of!       
         rename(t = time) %>% 
         gather(sample, n, -t) %>% filter(between(t, input$trim[1], input$trim[2])) %>%
         group_by(sample) %>% nest %>%
         mutate(fits = map(data, growth.function)
                )
-    })
+    }
     
     df2 <- reactive({       #this is the df used further, contains only passed models - filtered from df1()  
       df1() %>% filter(!grepl("*Error*", fits)) %>%   # filter passed models here    
@@ -136,7 +149,8 @@ server <- function(input, output) {
     })
     
     modelplot <- function() { 
-      df %>%  rename(t = time) %>% gather(sample, n, -t) %>%
+      df %>%  select(time, one_of(input$selectedSamples)) %>% # here actual filtering on selectedSamples , notice one_of!
+        rename(t = time) %>% gather(sample, n, -t) %>%
         ggplot() + 
         geom_point(aes(t,n), alpha = 0.3) +
         geom_line(aes(t,pred), color = "red", linetype = 4, data = unnest(df2(), preds)) +  
@@ -160,19 +174,19 @@ server <- function(input, output) {
                                         formatRound(columns = colnames(df), 3)
                                        )
     
-    if (ncol(df) <= 8) plotHeight1 = 300 else (plotHeight1 = ncol(df) * 20)
+   
      output$model <- renderPlot({
       modelplot()
-    }, res = 100, height = plotHeight1)
+    }, res = 100)
     
-    if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
+    #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
     output$summaryK <- renderPlot({
       summaryplot("k")
-    }, res = 100, height = plotHeight2)
+    }, res = 100)
     
     output$summaryR <- renderPlot({
       summaryplot("r")
-    }, res = 100, height = plotHeight2)
+    }, res = 100)
     
     output$summaryTableK <- DT::renderDataTable({
       dtt <- df2() %>% unnest(params) %>% filter(term == "k") %>% 
