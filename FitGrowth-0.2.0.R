@@ -19,7 +19,7 @@ library(DT)
       menuItem("Summary table", tabName = "summaryTable", icon = icon("table")),
       fluidRow(valueBoxOutput("numSamplesBox", width = 12), (valueBoxOutput("successSamplesBox", width = 12))),
       hr(),
-      menuItem(sliderInput("trim", label = h5("Trim time"), min=0, max=100, value=c(0,40))),
+      menuItem(sliderInput("trim", label = h5("Trim time"), min=0, max=150, value=c(0,40))),
       hr(),
       menuItem("About", tabName = "about", icon = icon("user-o"))
         )
@@ -46,9 +46,9 @@ library(DT)
                            Tab='\t'),
                          ','),
             radioButtons('decmark', 'Decimal mark',
-                         c('comma'=',',
-                           'point'="."),
-                         '.'),
+                         c('comma'=",",'point'="."), selected = '.'),
+            radioButtons("timeUnits", "Select time unit", 
+                         c("Hours" = "h", "Minutes" = "min", "Seconds" = "sec"), selected = "h"),
             width = 3),
           box(width = 9, status = "primary", DT::dataTableOutput("data"))
           )
@@ -106,7 +106,7 @@ server <- function(input, output, session) {
     summaryplot <- function(x) {df2() %>%  
         unnest(params) %>% 
         select(-statistic, -p.value) %>% 
-        filter(term == x) %>% 
+        filter(term == x) %>%            #  arg
         arrange(-estimate) %>% 
         mutate(sample = factor(sample, sample)) %>% 
                  ggplot() +
@@ -158,7 +158,7 @@ server <- function(input, output, session) {
         geom_line(aes(t,pred), color = "red", linetype = 4, data = unnest(df2(), preds)) +  
         geom_point(aes(t, n), color="deepskyblue3", alpha = 0.8, data = unnest(df2(), preds)) +
         facet_wrap(~ sample, ncol = input$facetCols, nrow = input$facetRows) +
-        xlab("Time") +
+        xlab(paste0("Time [", input$timeUnits, "]")) +
         ylab("OD") +
         theme_minimal()
       
@@ -184,11 +184,11 @@ server <- function(input, output, session) {
     
     #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
     output$summaryK <- renderPlot({
-      summaryplot("k")
+      summaryplot("k") + ylab("OD")
     }, res = 100)
     
     output$summaryR <- renderPlot({
-      summaryplot("r")
+      summaryplot("r") + ylab(paste0("per ", input$timeUnits))
     }, res = 100)
     
     output$summaryTableK <- DT::renderDataTable({
