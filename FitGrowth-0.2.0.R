@@ -58,9 +58,9 @@ library(DT)
               fluidRow(
                 box(width = 12, 
                   h5("Plots of original data, the points used in the model are in blue, model fit is a red line. Change time slider to re-calculate."),
-                    column(6, selectizeInput("selectedSamples", 
+                    column(8, selectizeInput("selectedSamples", 
                                              "Select which samples to analyse", choices = NULL, multiple = TRUE)),
-                    column(3, selectizeInput("facetRows", "Number of plot rows", choices = c(1:10), selected =10)),
+                    #column(3, selectizeInput("facetRows", "Number of plot rows", choices = c(1:10), selected =10)),
                     column(3, selectizeInput("facetCols", "Number of plot columns", choices = c(1:12), selected =1)),
                     downloadLink('downloadModelPlot', 'Download Plot (pdf)')),
                 
@@ -127,9 +127,9 @@ server <- function(input, output, session) {
 # selectize initialisation
     sampleslist <- colnames(df) 
     updateSelectizeInput(session, "selectedSamples", 
-                         choices = sampleslist[2:length(sampleslist)], 
-                         selected = sampleslist[2], # start with 1 sample selected
-                         server = TRUE) # used to filter samples to analyze
+                         choices = sampleslist[2:length(sampleslist)],       #excluding time, which is the first element
+                         selected = sampleslist[2],                          # start with 1 sample selected
+                         server = TRUE) 
 # ** reactive things
     
     df1 <- function(){         #this is df1(), attempt to model all samples, used to give number of failed  in errorSample 
@@ -150,7 +150,7 @@ server <- function(input, output, session) {
                )
     })
     
-    modelplot <- function() { 
+    modelplot <- function() {
       df %>%  select(time, one_of(input$selectedSamples)) %>% # here actual filtering on selectedSamples , notice one_of!
         rename(t = time) %>% gather(sample, n, -t) %>%
         ggplot() + 
@@ -161,10 +161,11 @@ server <- function(input, output, session) {
         xlab("Time") +
         ylab("OD") +
         theme_minimal()
+      
     }
     
 
-
+    
 #** outputs
     output$data <- DT::renderDataTable(datatable(df, 
                                                  rownames = FALSE, 
@@ -246,14 +247,14 @@ server <- function(input, output, session) {
      output$downloadSummaryPlotK <- downloadHandler(
        filename = "summaryPlot.pdf",
        content = function(file) {
-         ggsave(file, plot = summaryplot("k"), device = "pdf")
+         ggsave(file, plot = summaryplot("k"), device = "pdf", width = 11, height = 8, units = "in")
        })
      
      
      output$downloadSummaryPlotR <- downloadHandler(
        filename = "summaryPlot.pdf",
        content = function(file) {
-         ggsave(file, plot = summaryplot("r"), device = "pdf")
+         ggsave(file, plot = summaryplot("r"), device = "pdf", width = 11, height = 8, units = "in")
        })
      #***   
      
