@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # FitGrowth
 ####Shiny app for modelling bacterial growth kinetics.
 This app fits growth data to the continuous logistic equation (https://en.wikipedia.org/wiki/Generalised_logistic_function). 

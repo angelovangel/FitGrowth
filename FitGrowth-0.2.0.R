@@ -61,10 +61,12 @@ library(DT)
                     column(8, selectizeInput("selectedSamples", 
                                              "Select which samples to analyse", choices = NULL, multiple = TRUE)),
                     #column(3, selectizeInput("facetRows", "Number of plot rows", choices = c(1:10), selected =10)),
-                    column(3, selectizeInput("facetCols", "Number of plot columns", choices = c(1:12), selected =1)),
-                    downloadLink('downloadModelPlot', 'Download Plot (pdf)')),
+                    column(3, selectizeInput("facetCols", "Number of plot columns", choices = c(1:12), selected =1))
+                    
+                    ),
                 
-                box(width = 12, title = "Model plot", status = "primary", 
+                box(width = 12, title = "Model plot", status = "primary",
+                    downloadLink('downloadModelPlot', 'Download Plot (pdf)'),
                     plotOutput("model"))
               )
             ),
@@ -124,12 +126,15 @@ server <- function(input, output, session) {
     df <- read_delim(inFile$datapath, col_names = input$header, delim = input$sep, 
                      locale = locale(decimal_mark = input$decmark), trim_ws = TRUE, escape_double = FALSE, na = "NA")
     
-# selectize initialisation
+# selectize initialisation and updates
     sampleslist <- colnames(df) 
     updateSelectizeInput(session, "selectedSamples", 
                          choices = sampleslist[2:length(sampleslist)],       #excluding time, which is the first element
                          selected = sampleslist[2],                          # start with 1 sample selected
                          server = TRUE) 
+  updateSliderInput(session, "trim", max = max(df$time), value = c(0, max(df$time)))
+    
+#******************************************    
 # ** reactive things
     
     df1 <- function(){         #this is df1(), attempt to model all samples, used to give number of failed  in errorSample 
@@ -196,7 +201,7 @@ server <- function(input, output, session) {
         rename("carrying capacity" = estimate) %>%
         select(-statistic, -p.value, -term) #formatRound does not work on df()
       datatable(dtt, rownames = FALSE, 
-                filter = list(position = 'top', clear = FALSE), 
+                
                 extensions = 'Buttons', options = list(dom = 'Brltip', buttons = c("copy", "csv", "print"))
                 ) %>%
      formatRound(colnames(dtt),3) %>%
@@ -211,7 +216,7 @@ server <- function(input, output, session) {
         rename("growth rate constant" = estimate) %>%
         select(-statistic, -p.value, -term) # formatRound does not work on df()
       datatable(dtt, rownames = FALSE, 
-                filter = list(position = 'top', clear = FALSE),
+                
                 extensions = 'Buttons', options = list(dom = 'Brltip', buttons = c("copy", "csv", "print"))
                 ) %>% 
         formatRound(colnames(dtt),3) %>%
