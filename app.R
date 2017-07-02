@@ -279,7 +279,7 @@ server <- function(input, output, session) {
   output$about <- renderUI({
     HTML(paste("2017 Angel Angelov <p>aangeloo@gmail.com</p>
                <p> Built in <code>R</code> using the libraries <code>shiny</code>, <code>broom</code>, <code>modelr</code> and <code>tidyverse</code>. 
-               The source code is available from GitHub here.</p>"))
+               The source code is available from GitHub <a href = https://github.com/angelovangel/FitGrowth>here</a>.</p>"))
         })
 }
 
