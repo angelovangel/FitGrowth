@@ -103,7 +103,7 @@ server <- function(input, output, session) {
     if(is.null(inFile))
     {return(NULL)}
     growth.formula <- formula(n ~ k/(1 + ((k - n0)/n0) * exp(-r * t)))
-    growth.function <- function(x) {try(nls(growth.formula, data = x, start = list(k = 10, n0 = 0.01, r = 0.5)))} #this is in try(), otherwise modelling stops at first error
+    growth.function <- function(x) {try(nls(growth.formula, data = x, start = list(k = 10, n0 = 0.1, r = 0.1)))} #this is in try(), otherwise modelling stops at first error
 #*** function to draw summary barplots    
     summaryplot <- function(x) {df2() %>%  
         unnest(params) %>% 
