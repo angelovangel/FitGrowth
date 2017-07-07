@@ -67,7 +67,8 @@ library(DT)
                 
                 box(width = 12, title = "Model plot", status = "primary",
                     downloadLink('downloadModelPlot', 'Download Plot (pdf)'),
-                    plotOutput("model"))
+                    plotOutput("model", click = "plot_click"),
+                    verbatimTextOutput("info"))
               )
             ),
       tabItem(tabName = "summaryPlots",
@@ -162,7 +163,7 @@ server <- function(input, output, session) {
         geom_point(aes(t,n), alpha = 0.3) +
         geom_line(aes(t,pred), color = "red", linetype = 4, data = unnest(df2(), preds)) +  
         geom_point(aes(t, n), color="deepskyblue3", alpha = 0.8, data = unnest(df2(), preds)) +
-        facet_wrap(~ sample, ncol = input$facetCols, nrow = input$facetRows) +
+        facet_wrap(~ sample, ncol = input$facetCols) +
         xlab(paste0("Time [", input$timeUnits, "]")) +
         ylab("OD") +
         theme_minimal()
@@ -186,6 +187,11 @@ server <- function(input, output, session) {
      output$model <- renderPlot({
       modelplot()
     }, res = 100)
+     
+   
+     output$info <- renderText({
+       paste0("x is:", input$plot_click$x, "\ny is:", input$plot_click$y)
+     }) 
     
     #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
     output$summaryK <- renderPlot({
