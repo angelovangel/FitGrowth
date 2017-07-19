@@ -67,8 +67,8 @@ library(DT)
                 
                 box(width = 12, title = "Model plot", status = "primary",
                     downloadLink('downloadModelPlot', 'Download Plot (pdf)'),
-                    plotOutput("model", click = "plot_click"),
-                    verbatimTextOutput("info"))
+                    plotOutput("model"))
+                    
               )
             ),
       tabItem(tabName = "summaryPlots",
@@ -189,9 +189,6 @@ server <- function(input, output, session) {
     }, res = 100)
      
    
-     output$info <- renderText({
-       paste0("x is:", input$plot_click$x, "\ny is:", input$plot_click$y)
-     }) 
     
     #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
     output$summaryK <- renderPlot({
