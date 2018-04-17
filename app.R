@@ -273,7 +273,7 @@ server <- function(input, output, session) {
   
   
   output$usage <- renderUI({
-    HTML(paste("<p>This app fits growth data to the continuous logistic equation (https://en.wikipedia.org/wiki/Generalised_logistic_function). 
+    HTML(paste("<p>This app fits growth data to the <a href=https://en.wikipedia.org/wiki/Generalised_logistic_function>continuous logistic equation</a>. 
     The best parameters (<code>n0</code>, <code>k</code> and <code>r</code>) are found using the nonlinear least-squares method (<code>nls</code> in <code>R</code>). 
     The app handles one or many samples (tested with 96), as well as
      NA values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
@@ -284,7 +284,10 @@ server <- function(input, output, session) {
   output$about <- renderUI({
     HTML(paste("2017 Angel Angelov <p>aangeloo@gmail.com</p>
                <p> Built in <code>R</code> using the libraries <code>shiny</code>, <code>broom</code>, <code>modelr</code> and <code>tidyverse</code>. 
-               The source code is available from GitHub <a href = https://github.com/angelovangel/FitGrowth>here</a>.</p>"))
+               The source code is available from GitHub 
+               <a href = https://github.com/angelovangel/FitGrowth>here</a>.</p>
+               <p>There is also a version of this app running on the Amazon cloud 
+               <a href = http://35.176.52.165/shiny/rstudio/FitGrowth/ >here</a> (the link might be inactive).</p>"))
         })
 }
 
