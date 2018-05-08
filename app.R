@@ -168,7 +168,8 @@ server <- function(input, output, session) {
         facet_wrap(~ sample, ncol = input$facetCols) +
         xlab(paste0("Time [", input$timeUnits, "]")) +
         ylab("OD") +
-        theme_minimal()
+        theme_minimal() + 
+        theme(aspect.ratio = 1)
       
     }
     
