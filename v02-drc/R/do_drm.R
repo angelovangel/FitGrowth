@@ -31,7 +31,7 @@ do_drm <- function(df, d, r, ...) {
 require(tidyverse)
 require(drc)
 #require(modelr)
-require(broom)
+#require(broom)
   
 # rename columns to dose and response in order for the drm to work (formula interface problems)
 d <- deparse(substitute(d))

@@ -7,7 +7,7 @@ library(tidyverse)
 library(ggpubr)
 library(data.table)
 #library(modelr)
-library(broom)
+#library(broom)
 library(DT)
 library(drc)
 
@@ -15,7 +15,7 @@ source("R/do_drm.R")
 #
 # ui ******
 
-  header <- dashboardHeader(title = "FitGrowth-v-2")
+  header <- dashboardHeader(title = "FitGrowth-v02-drc")
   
   sidebar <- dashboardSidebar(
     sidebarMenu(
