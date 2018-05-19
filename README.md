@@ -27,7 +27,7 @@ Upload the data as a text file, the first column **must** be named `time`, all o
 This is version 02 of the app, which uses the `drc` library for fitting the model. If you want to use to old version, run this:
 
 ```r
-shiny::runGitHub("FitGrowth", "angelovangel")
+shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v01/")
 ```
 
 Cheers!   
