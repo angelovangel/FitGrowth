@@ -70,7 +70,8 @@ source("R/do_drm.R")
                     plotOutput("model")),
                 column(4, sliderInput("trim", label = h5("Trim time"), min=0, max=150, value=c(0,40))),
                 column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3)),
-                column(2, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
+                column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
+                column(1, checkboxInput("doublingtime", label = "Show doubling time", value = FALSE)),
                 column(2, downloadButton('downloadModelPlot', 'Download Plot (pdf)'))
                     
               )
@@ -158,12 +159,22 @@ server <- function(input, output, session) {
                  data = data) +
       # geom_vline(aes(xintercept = input$trim[1]), linetype = 5, size = 0.2) +
       # geom_vline(aes(xintercept = input$trim[2]), linetype = 5, size = 0.2) +
+      
        
       facet_wrap(~ sample, ncol = as.integer(input$facetCols)) +
       xlab(paste0("Time [", input$timeUnits, "]")) +
       ylab("OD")
       
-        if(input$confidence) p <- p + geom_ribbon(aes(dose, ymin = predmin, ymax = predmax), alpha = 0.2, data = predictions)
+        if(input$confidence) p <- p + geom_ribbon(aes(dose, ymin = predmin, ymax = predmax), alpha = 0.3, data = predictions)
+        if(input$doublingtime) p <- p + 
+                                      geom_text(aes(x = Inf, y = -Inf, 
+                                                    label = paste0(round(dt, 3)," ", input$timeUnits)
+        ), 
+        hjust = 1.1,
+        vjust = -0.5,
+        size = 3,
+        color = "steelblue",
+        data = dtt())
      
         if(input$theme == "blackwhite") p <- p + theme_bw()
         if(input$theme == "minimal")    p <- p + theme_minimal()
@@ -208,34 +219,37 @@ server <- function(input, output, session) {
    
     
     #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
-    
+     
+     dtt <- reactive({
+       df1() %>% 
+       unnest(coefs) %>% 
+       dplyr::filter(param == "Slope:(Intercept)") %>%
+       dplyr::mutate(Estimate = abs(Estimate),
+                     dt = log(2)/Estimate,
+                     dtsterr = exp(Estimate + `Std. Error`) - exp(Estimate))
+     })
     
     output$summaryTable <- DT::renderDataTable({
-      dtt <- df1() %>% 
-              unnest(coefs) %>% 
-              dplyr::filter(param == "Slope:(Intercept)") %>%
-              dplyr::mutate(Estimate = abs(Estimate),
-                            dt = log(2)/Estimate,
-                            dtsterr = exp(Estimate + `Std. Error`) - exp(Estimate)) %>%
+      dtt() %>%
              
               dplyr::select(Sample = sample, 
                             "Growth rate constant" = Estimate, 
                             "Growth rate std. error" = `Std. Error`,
                             "Doubling time" = dt,
-                            "Doubling time std. error" = dtsterr)
+                            "Doubling time std. error" = dtsterr) %>%
       
       
      
       
         
-      datatable(dtt, 
+      datatable( 
                 caption = paste0("L4 parameters, the time range used in the model is between ", input$trim[1], " and ", input$trim[2], " ", input$timeUnits),
                 rownames = FALSE, 
                 extensions = 'Buttons', 
                 options = list(dom = 'Brltip', 
                                buttons = c("copy", "csv", "print"))
                 ) %>%
-    formatRound(colnames(dtt),3) %>%
+    formatRound(2:5, 3) %>%
     formatStyle(1, fontWeight = "bold") %>%
     formatStyle(1, backgroundColor = "steelblue", color = "white")
         })
@@ -273,7 +287,7 @@ server <- function(input, output, session) {
   
   
   output$usage <- renderUI({
-    HTML(paste("<p>This app fits growth data to the continuous logistic equation (https://en.wikipedia.org/wiki/Generalised_logistic_function). 
+    HTML(paste("<p>This app fits a log-logistic model to the growth data. 
     The best parameters are found using the <code>drc</code> library in <code>R</code>. 
     The app handles one or many samples (tested with 96), as well as
      NA values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
