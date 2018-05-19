@@ -67,7 +67,7 @@ source("R/do_drm.R")
                 
                 box(width = 12, title = "Model plot", status = "primary",
                     
-                    plotOutput("model")),
+                    plotOutput("model", height = "600px")),
                 column(4, sliderInput("trim", label = h5("Trim time"), min=0, max=150, value=c(0,40))),
                 column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3)),
                 column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
