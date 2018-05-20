@@ -34,7 +34,7 @@ source("R/do_drm.R")
     tabItems(
       tabItem(tabName = "data",
         fluidRow(
-          box(width = 12, h5("Load the data as a text file, the first column must be named time, all other columns are treated as samples. Adjust the file input settings until the data is read into the app")),
+          box(width = 12, h5("Load the data as a text file, the first column must be named time, all other columns are treated as samples.")),
           box(width = 3,
             title = "Read file", status = "primary",
             fileInput('file1', 'Choose file'),
@@ -288,15 +288,16 @@ server <- function(input, output, session) {
   
   output$usage <- renderUI({
     HTML(paste("<p>This app fits a log-logistic model to the growth data. 
-    The best parameters are found using the <code>drc</code> library in <code>R</code>. 
+    The best parameters are found using the <code>drc</code> library in <code>R</code>. More specifically, 
+    the four-parameter log-logistic function is used (<code>LL.4</code> in <code>drc</code>). 
     The app handles one or many samples (tested with 96), as well as
-     NA values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
+    <code>NA</code> values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
     load the data as a text file, the first column <u>must</u> be named <b>time</b>, all other columns are treated as
-    samples. 
-    Note that the parameters of the logistic model are re-calculated when the time interval is changed with the slider."))
+    samples. After uploading the file, go to the <b>Model</b> tab to select which samples to analyse.
+    Note that the parameters of the model are re-calculated when the time interval is changed with the slider."))
         })
   output$about <- renderUI({
-    HTML(paste("2017 Angel Angelov <p>aangeloo@gmail.com</p>
+    HTML(paste("2018 Angel Angelov <p>aangeloo@gmail.com</p>
                <p> Built in <code>R</code> using the libraries <code>shiny</code>, <code>drc</code> and <code>tidyverse</code>. 
                The source code is available from GitHub <a href = https://github.com/angelovangel/FitGrowth>here</a>.</p>"))
         })
