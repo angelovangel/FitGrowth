@@ -10,6 +10,7 @@ library(data.table)
 #library(broom)
 library(DT)
 library(drc)
+library(memoise)
 
 source("R/do_drm.R")
 #
@@ -135,14 +136,16 @@ server <- function(input, output, session) {
     }
     
     
-    
+    # try memoise? to avoid fitting repeatedly
     df1 <- function(){
-     dflong() %>% 
+     dflong() %>%
         filter(between(t, input$trim[1], input$trim[2])) %>%
         do_drm(t, n, sample)
           # get statistics with lapply on the drm output, e.g lapply(drmout$models, summary)
-        }
-      
+    }
+
+    
+    
     
     modelplot <- function() {
       predictions <- df1() %>% unnest(pred)
