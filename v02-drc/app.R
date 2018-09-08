@@ -13,6 +13,8 @@ library(drc)
 library(memoise)
 
 source("R/do_drm.R")
+
+
 #
 # ui ******
 
@@ -119,6 +121,7 @@ server <- function(input, output, session) {
                          selected = sampleslist[2:3],                         
                          server = TRUE) 
     updateSliderInput(session, "trim", max = max(df()$time), value = c(0, max(df()$time)))
+    
   })
     
 #******************************************    
@@ -137,19 +140,23 @@ server <- function(input, output, session) {
     
     
     # try memoise? to avoid fitting repeatedly
-    df1 <- function(){
-     dflong() %>%
-        filter(between(t, input$trim[1], input$trim[2])) %>%
+    # does not work
+    # then try dflong as argument? works!
+    df1 <- memoise(function(x, trim1 = input$trim[1], trim2 = input$trim[2]){
+     x %>%
+        filter(between(t, trim1, trim2)) %>%
         do_drm(t, n, sample)
           # get statistics with lapply on the drm output, e.g lapply(drmout$models, summary)
-    }
+    })
 
     
     
+    observe({print(df1(dflong()))})
+    
     
     modelplot <- function() {
-      predictions <- df1() %>% unnest(pred)
-      data <- df1() %>% unnest(data)
+      predictions <- df1(dflong()) %>% unnest(pred)
+      data <- df1(dflong()) %>% unnest(data)
       
      p <- dflong() %>%
       ggplot() + 
@@ -195,7 +202,8 @@ server <- function(input, output, session) {
 #** outputs
   
       
-    sampledf <- reactive({df() %>% 
+    sampledf <- reactive({
+      df() %>% 
       gather(sample, od, -1) %>% 
       group_by(sample) %>% 
       summarise(NAs = sum(is.na(od)), measurements = n() - NAs)
@@ -224,7 +232,7 @@ server <- function(input, output, session) {
     #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
      
      dtt <- reactive({
-       df1() %>% 
+       df1(dflong()) %>% 
        unnest(coefs) %>% 
        dplyr::filter(param == "Slope:(Intercept)") %>%
        dplyr::mutate(Estimate = abs(Estimate),
@@ -266,7 +274,7 @@ server <- function(input, output, session) {
     
      output$successSamplesBox <- renderValueBox({
       
-      ifelse (ncol(df()) >= 2, successSample <- nrow(df1()), successSample <- 0)
+      ifelse (ncol(df()) >= 2, successSample <- nrow(df1(dflong())), successSample <- 0)
       ifelse(successSample == 0, color2 <- "red", #yes
                                   ifelse(successSample < ncol(df())-1, color2 <- "yellow", color2 <- "green")
         )
