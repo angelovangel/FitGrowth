@@ -1,6 +1,7 @@
 ## app.R ##
 # shiny dashboard version
-######################################write this shit new, must be faster #########################################################
+# shiny dashboard version
+# v02-drc, uses memoise, plotting is now the slowest part
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
@@ -98,7 +99,10 @@ source("R/do_drm.R")
 ui <- dashboardPage(header, sidebar, body)
 
 server <- function(input, output, session) {
-  #observe({
+  
+  session$onSessionEnded(function() {
+    stopApp()
+  })
     
   df <- reactive({
   
@@ -293,7 +297,7 @@ server <- function(input, output, session) {
      
      #***   
      
-    #}) # end observe
+    
   
   
   
