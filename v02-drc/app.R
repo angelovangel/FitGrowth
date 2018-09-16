@@ -302,9 +302,9 @@ server <- function(input, output, session) {
   
   
   output$usage <- renderUI({
-    HTML(paste("<p>This app fits a log-logistic model to the growth data. 
+    HTML(paste("<p>This app fits a logistic model to the growth data. 
     The best parameters are found using the <code>drc</code> library in <code>R</code>. More specifically, 
-    the four-parameter log-logistic function is used (<code>LL.4</code> in <code>drc</code>). 
+    the four-parameter logistic function is used (<code>L.4</code> in <code>drc</code>). 
     The app handles one or many samples (tested with 96), as well as
     <code>NA</code> values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
     load the data as a text file, the first column <u>must</u> be named <b>time</b>, all other columns are treated as
