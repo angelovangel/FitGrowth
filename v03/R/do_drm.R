@@ -69,7 +69,7 @@ coefs.fun <- function(x) {
 confint_slope.fun <- function(x) {
   slope <- coef(x)
   cis <- confint(x, parm = "Slope")
-  data.table(slope = slope[1], "CI 2.5 %" = cis[1], "CI 97.5 %" = cis[2])
+  data.table(slope = slope[1], lowerCI = cis[1], upperCI = cis[2])
 }
 
 df %>% group_by(...) %>% nest() %>% 

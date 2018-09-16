@@ -66,7 +66,7 @@ source("R/do_drm.R")
                 column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3, step = 0.1)),
                 #column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
                 column(1, checkboxInput("doublingtime", label = "Show doubling time", value = FALSE)),
-                column(1, downloadLink("downloadPlot", label = "Download plot (pdf)"))
+                column(1, downloadButton("downloadPlot", label = "Download plot (pdf)"))
               )
             ),
       
@@ -129,7 +129,8 @@ server <- function(input, output, session) {
       df() %>% 
         dplyr::select(time, one_of(input$selectedSamples)) %>% # here actual filtering on selectedSamples , notice one_of!       
         rename(t = time) %>%
-        gather(sample, n, -t)
+        gather(sample, n, -t) %>%
+        arrange(sample) # make sure the samples are in alphabeticasl order
       
     }
     
@@ -157,7 +158,11 @@ server <- function(input, output, session) {
       datatrimmed <- df1(dflong()) %>% unnest(data) %>% dplyr::select(sample, t, n)
       datafull <- dflong()
       latticedf <- make.groups(full = datafull, trimmed = datatrimmed, predicted = predicted)
+      # order elements of the vector alphabetically by name, because as.table = TRUE and only so can the
+      # correct dt be printed on each plot
       dtvector <- purrr::as_vector(round(dtt()["dt"], digits = 3))
+      print(dtvector)
+      # 
       xmax <- max(datafull$t, na.rm = TRUE); print(xmax)
       ymin <- min(datafull$n, na.rm = TRUE); print(ymin)
       
@@ -184,11 +189,12 @@ server <- function(input, output, session) {
       if(input$doublingtime) {
         return(update(latticeplot, panel = function(x, y, ...) { # here comes the panel.text to put doubling times
                                             panel.xyplot(x, y, ...)
-                                            panel.text(xmax, ymin, 
-                                            labels = paste(dtvector[panel.number()], input$timeUnits, sep = " "),
-                                            adj = c(1, -1),
-                                            cex = 0.7,
-                                            alpha = 0.8) # use dtvector[panel.number()] to put the respective dt to panel
+                                            panel.text(xmax, ymin,
+                                                       #labels = panel.number(),
+                                                       labels = paste(dtvector[panel.number()], input$timeUnits, sep = " "),
+                                                      adj = c(1, -1),
+                                                      cex = 0.7,
+                                                      alpha = 0.8) # use dtvector[panel.number()] to put the respective dt to panel
           
                                             }
                       )
@@ -241,21 +247,25 @@ server <- function(input, output, session) {
      
      dtt <- reactive({
        df1(dflong()) %>% 
-       unnest(coefs) %>% 
-       dplyr::filter(param == "Slope:(Intercept)") %>%
-       dplyr::mutate(Estimate = abs(Estimate),
-                     dt = log(2)/Estimate,
-                     dtsterr = exp(Estimate + `Std. Error`) - exp(Estimate))
+       unnest(confints) %>% 
+       dplyr::mutate(Slope = abs(slope),
+                     lower = abs(lowerCI),
+                     upper = abs(upperCI),
+                     dt = log(2)/Slope,
+                     dtlower = log(2)/lower,
+                     dtupper = log(2)/upper)
      })
     
     output$summaryTable <- DT::renderDataTable({
       dtt() %>%
              
-              dplyr::select(Sample = sample, 
-                            "Growth rate constant" = Estimate, 
-                            "Growth rate std. error" = `Std. Error`,
+              dplyr::select("Sample" = sample, 
+                            "Growth rate constant" = Slope, 
+                            "Growth rate 2.5 % CI" = lower,
+                            "Growth rate 97.2 % CI" = upper,
                             "Doubling time" = dt,
-                            "Doubling time std. error" = dtsterr) %>%
+                            "Doubling time 2.5 % CI" = dtlower,
+                            "Doubling time 97.5 % CI" = dtupper) %>%
               datatable( 
                 caption = paste0("L4 parameters, the time range used in the model is between ", input$trim[1], " and ", input$trim[2], " ", input$timeUnits),
                 rownames = FALSE, 
@@ -263,7 +273,7 @@ server <- function(input, output, session) {
                 options = list(dom = 'Brltip', 
                                buttons = c("copy", "csv", "print"))
                 ) %>%
-    formatRound(2:5, 3) %>%
+    formatRound(2:7, 3) %>%
     formatStyle(1, fontWeight = "bold") %>%
     formatStyle(1, backgroundColor = "steelblue", color = "white")
         })
