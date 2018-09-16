@@ -4,7 +4,7 @@
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
-library(ggpubr)
+#library(ggpubr)
 library(data.table)
 #library(modelr)
 #library(broom)
@@ -56,28 +56,17 @@ source("R/do_drm.R")
                 box(width = 12, 
                   h5("Plots of original data, the points used in the model are in blue, model fit is a red line. Change time slider to re-calculate."),
                     column(6, selectizeInput("selectedSamples", 
-                                             "Select which samples to analyse", choices = c("A"), multiple = TRUE)),
-                    column(4, selectizeInput("theme", "Plot theme", 
-                                           choices = c("blackwhite", 
-                                                       "minimal",
-                                                       "pubclean",
-                                                       "pubr"),
-                                           selected = "blackwhite",
-                                           multiple = F)),
-                    
-                    column(2, selectizeInput("facetCols", "Number of plot columns", choices = c(1:24), selected =1))
-                    
+                                             "Select which samples to analyse", choices = "", multiple = TRUE))
                     ),
                 
                 box(width = 12, title = "Model plot", status = "primary",
                     
-                    plotOutput("model", height = "600px")),
+                    plotOutput("model", height = "500px")),
                 column(4, sliderInput("trim", label = h5("Trim time"), min=0, max=150, value=c(0,40))),
-                column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3)),
-                column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
+                column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3, step = 0.1)),
+                #column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
                 column(1, checkboxInput("doublingtime", label = "Show doubling time", value = FALSE)),
-                column(2, downloadButton('downloadModelPlot', 'Download Plot (pdf)'))
-                    
+                column(1, downloadLink("downloadPlot", label = "Download plot (pdf)"))
               )
             ),
       
@@ -100,13 +89,14 @@ ui <- dashboardPage(header, sidebar, body)
 
  #### server ####
 server <- function(input, output, session) {
-  #observe({
+  
+  session$onSessionEnded(function() {stopApp()})
     
   df <- reactive({
   
     inFile <- input$file1
-    # if(is.null(inFile))
-    # {return(NULL)}
+     # if(is.null(inFile))
+     # {return(NULL)}
     
     validate(
       need(expr = !is.null(input$file1), "Please select file first")
@@ -122,12 +112,15 @@ server <- function(input, output, session) {
                          choices = sampleslist[2:length(sampleslist)],       #excluding time, which is the first element
                          selected = sampleslist[2:3],                         
                          server = TRUE) 
-    updateSliderInput(session, "trim", max = max(df()$time), value = c(0, max(df()$time)))
+    updateSliderInput(session, "trim", 
+                      max = max(df()$time, na.rm = TRUE), 
+                      min = min(df()$time, na.rm = TRUE),
+                      value = c(min(df()$time), max(df()$time)))
     
   })
     
  #******************************************    
- ## model df, fits model after filtering by time
+ ## 
     
     dflong <- function() {
       validate(need
@@ -153,58 +146,58 @@ server <- function(input, output, session) {
 
     
     
-    observe({print(df1(dflong()))})
+  # observe({print(df1(dflong()))})
     
   # test lattice for faster plotting
     mplotlattice <- function() {
-      predictions <- df1(dflong()) %>% unnest(pred)
-      data <- df1(dflong()) %>% unnest(data)
-      xyplot(n ~ t | sample, data = data, as.table = TRUE)
-    }
+      # prepare a suitable dataframe, used the instructions from:
+      # http://lattice.r-forge.r-project.org/Vignettes/src/lattice-tricks/regression-lines.pdf
+      # on page 14
+      predicted <- df1(dflong()) %>% unnest(pred) %>% rename(t = dose, n = pred) %>% dplyr::select(sample, t, n)
+      datatrimmed <- df1(dflong()) %>% unnest(data) %>% dplyr::select(sample, t, n)
+      datafull <- dflong()
+      latticedf <- make.groups(full = datafull, trimmed = datatrimmed, predicted = predicted)
+      dtvector <- purrr::as_vector(round(dtt()["dt"], digits = 3))
+      xmax <- max(datafull$t, na.rm = TRUE); print(xmax)
+      ymin <- min(datafull$n, na.rm = TRUE); print(ymin)
+      
+      latticeplot <- xyplot(n ~ t | sample, 
+             data = latticedf, 
+             groups = which,
+             distribute.type = TRUE, # how does this work, see  help(panel.superpose)
+             type = c("p", "p", "l", "g"), # grid, point, point, line
+             col = c("grey", "steelblue", "red"),
+             par.settings = list(strip.background=list(col="lightgrey")),
+             as.table = TRUE, 
+             pch = 16, 
+             alpha = c(input$pointsalpha, input$pointsalpha, 0.7), 
+             aspect = 1, 
+             xlab = paste0("time", " [",input$timeUnits, "]"), 
+             ylab = "OD",
+             main = "Growth curve(s), model fit and doubling times",
+             sub = paste0("Data from ", 
+                          input$trim[1], " to ", 
+                          input$trim[2], " ",input$timeUnits," was used in fitting the model")
+             
+             )
+      # trellis are S3 objects and can be updated:
+      if(input$doublingtime) {
+        return(update(latticeplot, panel = function(x, y, ...) { # here comes the panel.text to put doubling times
+                                            panel.xyplot(x, y, ...)
+                                            panel.text(xmax, ymin, 
+                                            labels = paste(dtvector[panel.number()], input$timeUnits, sep = " "),
+                                            adj = c(1, -1),
+                                            cex = 0.7,
+                                            alpha = 0.8) # use dtvector[panel.number()] to put the respective dt to panel
+          
+                                            }
+                      )
+               )
+      
+        }
+      return(latticeplot)
     
-    modelplot <- function() {
-      predictions <- df1(dflong()) %>% unnest(pred)
-      data <- df1(dflong()) %>% unnest(data)
-      
-     p <- dflong() %>%
-      ggplot() + 
-      geom_point(aes(t, n), alpha = input$pointsalpha, size = 1) +
-       # main pred line
-      geom_line(aes(dose, pred), color = "red", linetype = 4, 
-                data = predictions) +
-      
-      geom_point(aes(t, n), alpha = input$pointsalpha, color = "steelblue", size = 1,
-                 data = data) +
-      # geom_vline(aes(xintercept = input$trim[1]), linetype = 5, size = 0.2) +
-      # geom_vline(aes(xintercept = input$trim[2]), linetype = 5, size = 0.2) +
-      
-       
-      facet_wrap(~ sample, ncol = as.integer(input$facetCols)) +
-      xlab(paste0("Time [", input$timeUnits, "]")) +
-      ylab("OD")
-      
-        if(input$confidence) p <- p + geom_ribbon(aes(dose, ymin = predmin, ymax = predmax), alpha = 0.3, data = predictions)
-        if(input$doublingtime) p <- p + 
-                                      geom_text(aes(x = Inf, y = -Inf, 
-                                                    label = paste0(round(dt, 3)," ", input$timeUnits)
-                                                    ), 
-                                              hjust = 1.1,
-                                              vjust = -0.5,
-                                              size = 3,
-                                              color = "steelblue",
-                                              data = dtt()
-                                              )
-     
-        if(input$theme == "blackwhite") p <- p + theme_bw()
-        if(input$theme == "minimal")    p <- p + theme_minimal()
-        if(input$theme == "pubclean") p <- p + theme_pubclean()
-        if(input$theme == "pubr") p <- p + theme_pubr()
-        
-      p <- p + theme(aspect.ratio = 1)
-     
-      print(p)
     }
-    
     
 #### up to here drm ok
 
@@ -236,9 +229,15 @@ server <- function(input, output, session) {
       mplotlattice()
     }, res = 120)
      
-   
+     output$downloadPlot <- downloadHandler(
+       filename = function() {"plot.pdf"},
+       content = function(file) {
+         pdf(file)
+         print(mplotlattice())
+         dev.off()
+       })
     
-    #if (ncol(df) <= 4) plotHeight2 = 200 else (plotHeight2 = ncol(df) * 25) #vary plot height according to number of samples
+    # use the confints column from do_drm, contains slope parameter with CIs (2.5 % and 97.5 %)
      
      dtt <- reactive({
        df1(dflong()) %>% 
@@ -257,12 +256,7 @@ server <- function(input, output, session) {
                             "Growth rate std. error" = `Std. Error`,
                             "Doubling time" = dt,
                             "Doubling time std. error" = dtsterr) %>%
-      
-      
-     
-      
-        
-      datatable( 
+              datatable( 
                 caption = paste0("L4 parameters, the time range used in the model is between ", input$trim[1], " and ", input$trim[2], " ", input$timeUnits),
                 rownames = FALSE, 
                 extensions = 'Buttons', 
@@ -291,25 +285,19 @@ server <- function(input, output, session) {
       valueBox(value = successSample, "samples fitted", color=color2) 
     })
 
-     #*** plot download handlers
-     output$downloadModelPlot <- downloadHandler(
-       filename = "modelPlot.pdf",
-       content = function(file) {
-          ggsave(file, plot = modelplot(), device = "pdf", width = 11, height = 8, units = "in")
-             })    
      
      
      
-     #***   
      
-    #}) # end observe
+     
+    
   
   
   
   output$usage <- renderUI({
-    HTML(paste("<p>This app fits a log-logistic model to the growth data. 
+    HTML(paste("<p>This app fits a logistic model to the growth data. 
     The best parameters are found using the <code>drc</code> library in <code>R</code>. More specifically, 
-    the four-parameter log-logistic function is used (<code>LL.4</code> in <code>drc</code>). 
+    the four-parameter logistic function is used (<code>L.4</code> in <code>drc</code>). 
     The app handles one or many samples (tested with 96), as well as
     <code>NA</code> values. You can get an example file <a href=https://www.dropbox.com/sh/zzf7y3ijwkat55e/AABUvp7BAARIdYBqZWgk1E37a?dl=0>here</a>.</p> Instructions: 
     load the data as a text file, the first column <u>must</u> be named <b>time</b>, all other columns are treated as
