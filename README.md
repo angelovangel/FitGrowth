@@ -11,7 +11,8 @@ You can use the example files in this directory (growthdata16.txt and growthdata
 The easiest way to run FitGrowth is if you have [RStudio](http://rstudio.org), you just have to paste this in your console:
 
 ```r
-shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v02-drc/")
+shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v03/")
+
 ```
 
 
@@ -24,7 +25,7 @@ Upload the data as a text file, the first column **must** be named `time`, all o
 
 
 **Update 2018-05-18**   
-This is version 02 of the app, which uses the `drc` library for fitting the model. If you want to use to old version, run this:
+This is version 03 of the app, which uses the `drc` library for fitting the model. If you want to use to old version, run this:
 
 ```r
 shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v01/")
