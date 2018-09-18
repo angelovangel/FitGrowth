@@ -101,12 +101,12 @@ do_drm_plot <- function(df, ed50 = FALSE, ...) {
     geom_point(aes_(~dose,  ~response, ...), alpha = 0.6) +  
     geom_line(aes_(~dose, ~pred, ...), data = df %>% unnest(pred)) +
     theme_bw()
-  # ifelse(ed50 == FALSE, 
-  #        p, 
-  #        p <- p + geom_vline(aes_(xintercept = ~`ED50:(Intercept)`, ...), 
-  #                            linetype = 5,
-  #                            data = df %>% unnest(coefs) %>% spread(names, x))
-  # ) 
+  ifelse(ed50 == FALSE,
+         p,
+         p <- p + geom_vline(aes_(xintercept = ~`ED50:(Intercept)`, ...),
+                             linetype = 5,
+                             data = df %>% unnest(coefs) %>% spread(names, x))
+  )
   return(p)
   
 }

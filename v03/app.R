@@ -19,7 +19,7 @@ source("R/do_drm.R")
 #
  #### ui ####
 
-  header <- dashboardHeader(title = "FitGrowth-v02-drc")
+  header <- dashboardHeader(title = "FitGrowth-v03")
   
   sidebar <- dashboardSidebar(
     sidebarMenu(
@@ -260,12 +260,12 @@ server <- function(input, output, session) {
       dtt() %>%
              
               dplyr::select("Sample" = sample, 
-                            "Growth rate constant" = Slope, 
-                            "Growth rate 2.5 % CI" = lower,
-                            "Growth rate 97.2 % CI" = upper,
+                            "Growth rate" = Slope, 
+                            "Growth rate lower limit (95% CI)" = lower,
+                            "Growth rate upper limit (95% CI)" = upper,
                             "Doubling time" = dt,
-                            "Doubling time 2.5 % CI" = dtlower,
-                            "Doubling time 97.5 % CI" = dtupper) %>%
+                            "Doubling time lower limit (95% CI)" = dtlower,
+                            "Doubling time upper limit (95% CI)" = dtupper) %>%
               datatable( 
                 caption = paste0("L4 parameters, the time range used in the model is between ", input$trim[1], " and ", input$trim[2], " ", input$timeUnits),
                 rownames = FALSE, 
