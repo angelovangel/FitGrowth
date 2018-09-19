@@ -48,7 +48,11 @@ df$response <- df[[r]]
 
 # this new predict.fun gives confidence intervals also
 predict.fun <- function(x) {
-  newdata <- data.frame(dose = seq(min(df$dose) - 0.1 * min(df$dose),max(df$dose) + 0.1 * max(df$dose)))
+  ## BUG ###
+  #avoid too big dataframes for predictions when working with big numbers, seq has by=1 by default
+  # use reasonable number of points to predict, they are used for plotting only anyway, ~ 100
+  newdata <- data.frame(dose = seq(min(df$dose) - (0.1 * min(df$dose)),max(df$dose) + (0.1 * max(df$dose)), length.out = 100)
+                        )
   #add_predictions(newdata, x) # add 10% below and above the data to the predictions
   pm <- predict(object = x, newdata = newdata, interval = "confidence")
   newdata$pred <- pm[ ,1]
