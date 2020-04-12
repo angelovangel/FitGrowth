@@ -11,7 +11,7 @@ You can use the example files in the `testdata` directory (growthdata16.txt and 
 The easiest way to run FitGrowth is if you have [RStudio](http://rstudio.org), you just have to paste this in your console:
 
 ```r
-shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v02/")
+shiny::runGitHub("FitGrowth", "angelovangel", subdir = "v02-drc")
 
 ```
 

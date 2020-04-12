@@ -65,13 +65,13 @@ source("R/do_drm.R")
                                            selected = "blackwhite",
                                            multiple = F)),
                     
-                    column(2, selectizeInput("facetCols", "Number of plot columns", choices = c(1:24), selected =1))
+                    column(2, selectizeInput("facetCols", "Number of plot columns", choices = c(1:24), selected =4))
                     
                     ),
                 
                 box(width = 12, title = "Model plot", status = "primary",
                     
-                    plotOutput("model", height = "600px")),
+                    plotOutput("model", height = "400px")),
                 column(4, sliderInput("trim", label = h5("Trim time"), min=0, max=150, value=c(0,40))),
                 column(4, sliderInput("pointsalpha", label = h5("Adjust point opacity"), min = 0, max = 1, value = 0.3)),
                 column(1, checkboxInput("confidence", label = "Show confidence interval", value = FALSE)),
